@@ -12,3 +12,6 @@ assert len(db.shape) == 1
 
 for user in db:
     print(user)
+
+print(len(db))
+print(len(np.unique(db)))
