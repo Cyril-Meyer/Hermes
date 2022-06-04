@@ -1,4 +1,5 @@
 import time
+import random
 import argparse
 import discord
 import numpy as np
@@ -7,14 +8,28 @@ parser = argparse.ArgumentParser(description='get user list')
 parser.add_argument('token', type=str, help='discord token')
 parser.add_argument('filename', type=str, help='user filename')
 parser.add_argument('message', type=str, help='message filename')
-parser.add_argument('--timer', type=int, default=1, help='time to wait (minutes) between messages')
+parser.add_argument('--timer', type=int, default=1, help='time to wait (seconds) between messages')
+parser.add_argument('--timer-random', type=int, default=5, help='random time to add to timer (max value)')
+parser.add_argument('--anti-spam-counter', type=int, default=10,
+                    help='message to send to trigger anti-spam-timer')
+parser.add_argument('--anti-spam-timer', type=int, default=45,
+                    help='time to wait (seconds) between anti-spam-counter messages')
+parser.add_argument('--anti-spam-timer-random', type=int, default=60,
+                    help='random time to add to anti-spam-timer (max value)')
+
 args = parser.parse_args()
 token = args.token
 filename = args.filename
 message = args.message
 timer = args.timer
+timer_random = args.timer_random
+anti_spam_counter = args.anti_spam_counter
+anti_spam_timer = args.anti_spam_timer
+anti_spam_timer_random = args.anti_spam_timer_random
 
 members_id = np.load(filename)
+members_id = members_id
+
 message = open(message, 'r', encoding='utf-8')
 message = message.read()
 
@@ -23,6 +38,7 @@ print('                 Hermes                 ')
 print('----------------------------------------')
 
 client = discord.Client()
+hermes_run = False
 
 
 @client.event
@@ -34,14 +50,39 @@ async def on_ready():
     print(f'discord.py : {discord.__version__}')
 
     print('----------------------------------------')
-
-    for member_id in members_id:
-        user = await client.fetch_user(member_id)
-        result = await user.send(message)
-        print(member_id, user, 'ERROR' if result.flags.value else 'OK')
-        time.sleep(timer)
+    print("hermes() :", end=" ")
+    ret_hermes = await hermes()
+    print(ret_hermes)
     print('----------------------------------------')
-    await client.close()
+    if ret_hermes == 0:
+        await client.close()
+
+
+async def hermes():
+    global hermes_run
+    if hermes_run:
+        return 42
+    else:
+        hermes_run = True
+
+    i = 0
+    for member_id in members_id:
+        print(member_id, end=" ")
+        user = await client.fetch_user(member_id)
+        print(user, end=" ")
+        result = await user.send(message)
+        print('ERROR' if result.flags.value else 'OK')
+        # anti spam A
+        time.sleep(timer)
+        time.sleep(random.random()*timer_random)
+        # anti spam B
+        if i > 0 and i % anti_spam_counter == 0:
+            pause = float(anti_spam_timer) + random.random()*float(anti_spam_timer_random)
+            print("anti spam pause:", pause)
+            time.sleep(pause)
+        i += 1
+
+    return 0
 
 
 client.run(token)
