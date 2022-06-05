@@ -3,6 +3,7 @@ import random
 import argparse
 import discord
 import numpy as np
+import pandas as pd
 
 parser = argparse.ArgumentParser(description='get user list')
 parser.add_argument('token', type=str, help='discord token')
@@ -27,8 +28,7 @@ anti_spam_counter = args.anti_spam_counter
 anti_spam_timer = args.anti_spam_timer
 anti_spam_timer_random = args.anti_spam_timer_random
 
-members_id = np.load(filename)
-members_id = members_id
+members = pd.read_csv(filename, sep=',')
 
 message = open(message, 'r', encoding='utf-8')
 message = message.read()
@@ -50,9 +50,8 @@ async def on_ready():
     print(f'discord.py : {discord.__version__}')
 
     print('----------------------------------------')
-    print("hermes() :", end=" ")
     ret_hermes = await hermes()
-    print(ret_hermes)
+    print("hermes() :", ret_hermes)
     print('----------------------------------------')
     if ret_hermes == 0:
         await client.close()
@@ -66,12 +65,16 @@ async def hermes():
         hermes_run = True
 
     i = 0
-    for member_id in members_id:
-        print(member_id, end=" ")
-        user = await client.fetch_user(member_id)
+    for _, member in members.iterrows():
+        time.sleep(1.0)
+        print(member['id'], end=" ")
+        user = await client.fetch_user(member['id'])
         print(user, end=" ")
-        result = await user.send(message)
-        print('ERROR' if result.flags.value else 'OK')
+        try:
+            result = await user.send(message)
+            print('ERROR' if result.flags.value else 'OK')
+        except Exception as e:
+            print('ERROR')
         # anti spam A
         time.sleep(timer)
         time.sleep(random.random()*timer_random)
