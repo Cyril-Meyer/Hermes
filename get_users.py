@@ -5,10 +5,8 @@ import numpy as np
 
 parser = argparse.ArgumentParser(description='get user list')
 parser.add_argument('token', type=str, help='discord token')
-parser.add_argument('--roles', type=str, nargs='+', default=None, help='names of selected roles')
 args = parser.parse_args()
 token = args.token
-selected_roles = args.roles
 
 print('----------------------------------------')
 print('                 Hermes                 ')
@@ -34,31 +32,31 @@ async def on_ready():
         print('*', guild.name)
 
     print('----------------------------------------')
-    print('Guilds roles')
+    print('Saving guilds users')
     for guild in client.guilds:
         print('*', guild.name)
-        for role in guild.roles:
-            print('  *', role.name)
-    print('----------------------------------------')
-    print('Guilds members')
-    members_all = dict()
-    for guild in client.guilds:
-        print('*', guild.name)
-        members = dict()
-        for member in guild.members:
-            if selected_roles is not None:
-                for role in member.roles:
-                    if role.name in selected_roles:
-                        print('  *', member.id, '(', member.name, ')')
-                        members[member.id] = member.name
-            else:
-                print('  *', member.id, '(', member.name, ')')
-                members[member.id] = member.name
-        # save
         guild_name = re.sub(r'\W+', '', guild.name)
-        np.save(f'users_{guild_name}.npy', np.array(list(members.keys()), dtype=np.int64))
-        members_all = {**members_all, **members}
-    np.save('users_all.npy', np.array(list(members_all.keys()), dtype=np.int64))
+        f = open(f'users/{guild_name}.csv', 'w', encoding='utf-8')
+        f.write('id,')
+        f.write('name')
+        for role in guild.roles:
+            role_name = re.sub(r'\W+', '', role.name)
+            f.write(f',{role_name}')
+            print('  *', role.name)
+        f.write('\n')
+
+        for member in guild.members:
+            member_name = re.sub(r'\W+', '', member.name)
+            print('  *', member.id, '(', member.name, ')')
+            f.write(f'{member.id},')
+            f.write(f'{member_name}')
+            for role in guild.roles:
+                if role in member.roles:
+                    f.write(f',1')
+                else:
+                    f.write(f',0')
+            f.write('\n')
+        f.close()
     print('----------------------------------------')
     await client.close()
 
