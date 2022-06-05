@@ -10,6 +10,7 @@ python -m venv venv
 .\venv\Scripts\activate.bat
 pip install -U pip
 pip install numpy
+pip install pandas
 pip install discord.py
 ```
 
