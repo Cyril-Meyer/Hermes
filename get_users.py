@@ -41,18 +41,18 @@ async def on_ready():
         df = pd.DataFrame()
         df.insert(0, 'id', [])
         df.insert(1, 'name', [])
-        for role in list(sorted(guild.roles, reverse=True, key=lambda role: role.name)):
+        for role in sorted(guild.roles, reverse=True, key=lambda role: role.name):
             df.insert(2, str(role), [])
 
         for member in guild.members:
             member_name = re.sub(r'\W+', '', member.name)
             # print('  *', member.id, '(', member.name, ')')
             member_data = [str(member.id), member_name]
-            for role in list(sorted(guild.roles, reverse=True, key=lambda role: role.name)):
+            for role in sorted(guild.roles, key=lambda role: role.name):
                 if role in member.roles:
-                    member_data.append(True)
+                    member_data.append(str(1))
                 else:
-                    member_data.append(False)
+                    member_data.append(str(0))
             df.loc[len(df.index)] = member_data
         df.to_csv(f'users/{guild_name}.csv', index_label='index')
 
