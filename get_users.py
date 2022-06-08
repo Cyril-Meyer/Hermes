@@ -2,6 +2,7 @@ import re
 import argparse
 import discord
 import numpy as np
+import pandas as pd
 
 parser = argparse.ArgumentParser(description='get user list')
 parser.add_argument('token', type=str, help='discord token')
@@ -36,27 +37,25 @@ async def on_ready():
     for guild in client.guilds:
         print('*', guild.name)
         guild_name = re.sub(r'\W+', '', guild.name)
-        f = open(f'users/{guild_name}.csv', 'w', encoding='utf-8')
-        f.write('id,')
-        f.write('name')
-        for role in guild.roles:
-            role_name = re.sub(r'\W+', '', role.name)
-            f.write(f',{role_name}')
-            print('  *', role.name)
-        f.write('\n')
+
+        df = pd.DataFrame()
+        df.insert(0, 'id', [])
+        df.insert(1, 'name', [])
+        for role in list(sorted(guild.roles, reverse=True, key=lambda role: role.name)):
+            df.insert(2, str(role), [])
 
         for member in guild.members:
             member_name = re.sub(r'\W+', '', member.name)
-            print('  *', member.id, '(', member.name, ')')
-            f.write(f'{member.id},')
-            f.write(f'{member_name}')
-            for role in guild.roles:
+            # print('  *', member.id, '(', member.name, ')')
+            member_data = [str(member.id), member_name]
+            for role in list(sorted(guild.roles, reverse=True, key=lambda role: role.name)):
                 if role in member.roles:
-                    f.write(f',1')
+                    member_data.append(True)
                 else:
-                    f.write(f',0')
-            f.write('\n')
-        f.close()
+                    member_data.append(False)
+            df.loc[len(df.index)] = member_data
+        df.to_csv(f'users/{guild_name}.csv', index_label='index')
+
     print('----------------------------------------')
     await client.close()
 
